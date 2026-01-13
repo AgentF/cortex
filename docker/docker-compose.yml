@@ -1,0 +1,23 @@
+services:
+  # CORTEX DATABASE (Postgres + Vector)
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: cortex_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secure_password_dev
+      POSTGRES_DB: cortex_local
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persistent storage in your WSL filesystem
+      - ./postgres_data:/var/lib/postgresql/data
+    shm_size: 1g # Shared memory boost for vector operations
+
+  # GUI TOOL (Adminer)
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"

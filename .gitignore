@@ -2,6 +2,8 @@
 node_modules/
 .pnp
 .pnp.js
+.DS_Store
+postgres_data
 
 # Nestjs specific
 /dist
