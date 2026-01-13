@@ -34,3 +34,19 @@ To interface with PostgreSQL.
     2.  Excluded `dist` folders to prevent infinite loops (`TS5055`).
     3.  Updated `start:dev` script to explicitly point to the entry file (`apps/api/src/main`).
 *   **Lesson:** In a Monorepo, the compiler needs to "see" the whole repo, but "ignore" the build artifacts.
+
+## 5. Phase 3: The Frontend Link (Vite)
+**Objective:** Connect the React frontend to the Monorepo without ejecting standard tooling.
+
+### The "Aha!" (Double Mapping)
+I learned that in a Monorepo, you must map paths twice:
+1.  **For the Editor (VS Code):** In `tsconfig.json`, so IntelliSense works.
+2.  **For the Bundler (Vite):** In `vite.config.ts` (via `resolve.alias`), so the browser can actually find the files.
+*If you miss one, you either get red lines (IDE) or a crashing app (Browser).*
+
+### The Struggle: ESLint Flat Config
+**Blocker:** `Parsing error: No tsconfigRootDir was set`.
+**Context:** The new ESLint (v9) uses a "Flat Config" that confused the TypeScript parser. It tried to lint the config file itself as if it were source code.
+**Fix:**
+1.  Used `import.meta.dirname` (Node 20+) to explicitly anchor the parser.
+2.  Separated configuration objects: One for JS files (config), one for TS files (source).
