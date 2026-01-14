@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 // IMPORTING FROM OUR SHARED LIBRARY
-import { Document } from '@cortex/shared'; 
+import { DocumentDto } from '@cortex/shared';
 
 @Injectable()
 export class AppService {
-  getHello(): Document {
+  getHello(): DocumentDto {
     // We return a strongly-typed Document, not just a string
     return {
       id: '123',
