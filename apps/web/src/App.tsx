@@ -1,58 +1,100 @@
-import { useState, useEffect } from "react";
-import type { Document } from "@cortex/shared"; // THE CRITICAL IMPORT
-import "./App.css";
+import { useEffect, useState } from "react";
+import { documentsApi } from "./services/documents";
+import { DocumentDto } from "@cortex/shared";
 
 function App() {
-  const [doc, setDoc] = useState<Document | null>(null);
+  const [docs, setDocs] = useState<DocumentDto[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Helper to refresh list
+  const refresh = () => {
+    setLoading(true);
+    documentsApi
+      .getAll()
+      .then(setDocs)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    // Simulate Network Latency (100ms)
-    // This moves the update to the next tick, preventing the "Synchronous" warning.
-    const timer = setTimeout(() => {
-      const mockData: Document = {
-        id: "frontend-001",
-        title: "Cortex UI Initialized",
-        content:
-          "The Vite subsystem is successfully reading from the Shared Monorepo Library.",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setDoc(mockData);
-    }, 100);
-
-    return () => clearTimeout(timer); // Cleanup is good habit
+    refresh();
   }, []);
 
+  const handleCreate = async () => {
+    await documentsApi.create({
+      title: `Note ${new Date().toLocaleTimeString()}`,
+      content: "# New Entry\nCreated via React.",
+    });
+    refresh();
+  };
+
+  const handleUpdate = async (id: string, currentTitle: string) => {
+    await documentsApi.update(id, {
+      title: `${currentTitle} (Edited)`,
+    });
+    refresh();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this note?")) return;
+    await documentsApi.delete(id);
+    refresh();
+  };
+
   return (
-    <div style={{ padding: "2rem", textAlign: "left" }}>
-      <h1>
-        System Status: <span style={{ color: "green" }}>ONLINE</span>
-      </h1>
-      <hr />
-      {doc ? (
-        <div>
-          <h2>Active Document: {doc.title}</h2>
-          <p>
-            <strong>ID:</strong> {doc.id}
-          </p>
-          <div
-            style={{
-              background: "#333",
-              color: "#fff",
-              padding: "1rem",
-              borderRadius: "8px",
-              marginTop: "1rem",
-            }}
-          >
-            {doc.content}
-          </div>
-          <p style={{ marginTop: "1rem", fontSize: "0.8rem", color: "#666" }}>
-            Validated via @cortex/shared
-          </p>
+    <div className="p-10 bg-gray-900 min-h-screen text-white font-sans">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-blue-500">CORTEX Uplink</h1>
+        <button
+          onClick={handleCreate}
+          disabled={loading}
+          className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded font-bold transition-colors"
+        >
+          + New Signal
+        </button>
+      </div>
+
+      {error && (
+        <div className="text-red-400 mb-4 border border-red-800 p-2">
+          {error}
         </div>
-      ) : (
-        <p>Connecting to Neural Link...</p>
       )}
+
+      <div className="grid gap-4">
+        {docs.length === 0 ? (
+          <p className="text-gray-500 italic">No signals detected.</p>
+        ) : (
+          docs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex justify-between items-center bg-gray-800 border border-gray-700 p-4 rounded-lg"
+            >
+              <div>
+                <h2 className="text-lg font-bold text-gray-200">{doc.title}</h2>
+                <div className="text-xs text-gray-500 font-mono mt-1">
+                  {doc.id}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleUpdate(doc.id, doc.title)}
+                  className="px-3 py-1 bg-blue-900 text-blue-200 text-sm hover:bg-blue-800 rounded"
+                >
+                  Rename
+                </button>
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  className="px-3 py-1 bg-red-900 text-red-200 text-sm hover:bg-red-800 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
