@@ -1,118 +1,126 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { documentsApi } from "./services/documents";
 import { DocumentDto } from "@cortex/shared";
+import { Sidebar } from "./components/layout/Sidebar";
 import { Editor } from "./components/editor/Editor";
 
 function App() {
   const [docs, setDocs] = useState<DocumentDto[]>([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [editorContent, setEditorContent] = useState(
-    "# Welcome to Cortex\nStart typing..."
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Helper to refresh list
-  const refresh = () => {
-    setLoading(true);
-    documentsApi
-      .getAll()
-      .then(setDocs)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+  // The local content of the currently selected document
+  const [content, setContent] = useState("");
+  const [status, setStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+
+  // 1. Initial Load
+  const refreshList = async () => {
+    const list = await documentsApi.getAll();
+    setDocs(list);
   };
 
   useEffect(() => {
-    refresh();
+    refreshList();
   }, []);
 
+  // 2. Handle Selection
+  const handleSelect = async (id: string) => {
+    // If we have unsaved changes in current doc, we should save them immediately (omitted for MVP simplicity)
+    setSelectedId(id);
+    const doc = await documentsApi.getOne(id);
+    setContent(doc.content);
+    setStatus("saved");
+  };
+
+  // 3. Handle Creation
   const handleCreate = async () => {
-    await documentsApi.create({
-      title: `Note ${new Date().toLocaleTimeString()}`,
-      content: "# New Entry\nCreated via React.",
+    const newDoc = await documentsApi.create({
+      title: "New Signal",
+      content: "# New Signal\nStart writing...",
     });
-    refresh();
+    await refreshList();
+    handleSelect(newDoc.id);
   };
 
-  const handleUpdate = async (id: string, currentTitle: string) => {
-    await documentsApi.update(id, {
-      title: `${currentTitle} (Edited)`,
-    });
-    refresh();
-  };
+  // 4. Handle Save (Debounced manually via useEffect)
+  useEffect(() => {
+    if (!selectedId) return;
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this note?")) return;
-    await documentsApi.delete(id);
-    refresh();
+    const timer = setTimeout(async () => {
+      if (status === "unsaved") {
+        setStatus("saving");
+        // Extract title from first line (H1) or default
+        const titleMatch = content.match(/^# (.*)$/m);
+        const title = titleMatch ? titleMatch[1] : "Untitled Note";
+
+        await documentsApi.update(selectedId, {
+          title,
+          content,
+        });
+
+        await refreshList(); // Refresh sidebar titles
+        setStatus("saved");
+      }
+    }, 1000); // Wait 1 second after typing stops
+
+    return () => clearTimeout(timer);
+  }, [content, selectedId, status]);
+
+  // 5. Handle Editor Change
+  const handleChange = (newContent: string) => {
+    setContent(newContent);
+    setStatus("unsaved");
   };
 
   return (
-    <div className="p-10 bg-gray-900 min-h-screen text-white font-sans">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-blue-500">CORTEX Uplink</h1>
-        <button
-          onClick={handleCreate}
-          disabled={loading}
-          className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded font-bold transition-colors"
-        >
-          + New Signal
-        </button>
-      </div>
+    <div className="flex h-screen bg-gray-900 text-white overflow-hidden font-sans">
+      <Sidebar
+        documents={docs}
+        selectedId={selectedId}
+        onSelect={handleSelect}
+        onCreate={handleCreate}
+      />
 
-      {error && (
-        <div className="text-red-400 mb-4 border border-red-800 p-2">
-          {error}
-        </div>
-      )}
+      <main className="flex-1 flex flex-col h-screen">
+        {selectedId ? (
+          <>
+            {/* Header / Status Bar */}
+            <div className="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-gray-900/50">
+              <div className="text-sm text-gray-500 font-mono">
+                ID: {selectedId.split("-")[0]}...
+              </div>
+              <div
+                className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider ${
+                  status === "saved"
+                    ? "text-green-500 bg-green-900/20"
+                    : status === "saving"
+                    ? "text-yellow-500 bg-yellow-900/20"
+                    : "text-gray-400"
+                }`}
+              >
+                {status === "unsaved" ? "..." : status}
+              </div>
+            </div>
 
-      <div className="grid gap-4">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold mb-2 text-gray-400">
-            Editor Sandbox (Local)
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            <Editor value={editorContent} onChange={setEditorContent} />
-            <div className="bg-gray-800 p-4 rounded border border-gray-700 font-mono text-sm whitespace-pre-wrap">
-              <h3 className="text-gray-500 mb-2 border-b border-gray-700 pb-2">
-                Live Markdown Output:
-              </h3>
-              {editorContent}
+            {/* Editor Container */}
+            <div className="flex-1 overflow-y-auto bg-gray-900">
+              <div className="max-w-3xl mx-auto py-12 px-8">
+                <Editor
+                  value={content}
+                  onChange={handleChange}
+                  className="border-none" // Remove border for clean look
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-600">
+            <div className="text-center">
+              <div className="text-6xl mb-4 opacity-20">🧠</div>
+              <p>Select a signal to begin decryption.</p>
             </div>
           </div>
-        </div>
-        {docs.length === 0 ? (
-          <p className="text-gray-500 italic">No signals detected.</p>
-        ) : (
-          docs.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex justify-between items-center bg-gray-800 border border-gray-700 p-4 rounded-lg"
-            >
-              <div>
-                <h2 className="text-lg font-bold text-gray-200">{doc.title}</h2>
-                <div className="text-xs text-gray-500 font-mono mt-1">
-                  {doc.id}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleUpdate(doc.id, doc.title)}
-                  className="px-3 py-1 bg-blue-900 text-blue-200 text-sm hover:bg-blue-800 rounded"
-                >
-                  Rename
-                </button>
-                <button
-                  onClick={() => handleDelete(doc.id)}
-                  className="px-3 py-1 bg-red-900 text-red-200 text-sm hover:bg-red-800 rounded"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))
         )}
-      </div>
+      </main>
     </div>
   );
 }
