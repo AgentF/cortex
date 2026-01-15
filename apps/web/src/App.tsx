@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { documentsApi } from "./services/documents";
 import { DocumentDto } from "@cortex/shared";
+import { Editor } from "./components/editor/Editor";
 
 function App() {
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editorContent, setEditorContent] = useState(
+    "# Welcome to Cortex\nStart typing..."
+  );
 
   // Helper to refresh list
   const refresh = () => {
@@ -62,6 +66,20 @@ function App() {
       )}
 
       <div className="grid gap-4">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-2 text-gray-400">
+            Editor Sandbox (Local)
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <Editor value={editorContent} onChange={setEditorContent} />
+            <div className="bg-gray-800 p-4 rounded border border-gray-700 font-mono text-sm whitespace-pre-wrap">
+              <h3 className="text-gray-500 mb-2 border-b border-gray-700 pb-2">
+                Live Markdown Output:
+              </h3>
+              {editorContent}
+            </div>
+          </div>
+        </div>
         {docs.length === 0 ? (
           <p className="text-gray-500 italic">No signals detected.</p>
         ) : (
