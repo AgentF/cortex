@@ -15,6 +15,7 @@ export class DocumentDto {
   id: string;
   title: string;
   content: string;
+  embedding?: number[];
   createdAt: Date;
   updatedAt: Date;
 }

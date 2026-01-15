@@ -17,6 +17,9 @@ export class Document {
   @Column({ type: 'text' }) // 'text' type has no length limit in Postgres (ideal for Markdown)
   content: string;
 
+  @Column({ type: 'vector', nullable: true })
+  embedding: number[];
+
   @CreateDateColumn({ type: 'timestamptz' }) // 'timestamptz' handles timezone offsets correctly
   createdAt: Date;
 
