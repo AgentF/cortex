@@ -71,6 +71,16 @@ function App() {
     setStatus("unsaved");
   };
 
+  // 6. Handle Delete
+  const handleDelete = async (id: string) => {
+    await documentsApi.delete(id);
+    if (selectedId === id) {
+      setSelectedId(null);
+      setContent("");
+    }
+    await refreshList();
+  };
+
   return (
     <div className="flex h-screen bg-gray-900 text-white overflow-hidden font-sans">
       <Sidebar
@@ -78,6 +88,7 @@ function App() {
         selectedId={selectedId}
         onSelect={handleSelect}
         onCreate={handleCreate}
+        onDelete={handleDelete}
       />
 
       <main className="flex-1 flex flex-col h-screen">

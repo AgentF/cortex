@@ -5,6 +5,7 @@ interface SidebarProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onDelete: (id: string) => void;
 }
 
 export const Sidebar = ({
@@ -12,6 +13,7 @@ export const Sidebar = ({
   selectedId,
   onSelect,
   onCreate,
+  onDelete,
 }: SidebarProps) => {
   return (
     <div className="w-64 bg-gray-950 border-r border-gray-800 flex flex-col h-screen shrink-0">
@@ -23,25 +25,39 @@ export const Sidebar = ({
           Vault V1
         </div>
       </div>
-
       <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-800">
         {documents.map((doc) => (
-          <button
-            key={doc.id}
-            onClick={() => onSelect(doc.id)}
-            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-              selectedId === doc.id
-                ? "bg-blue-900/30 text-blue-200 border border-blue-800/50"
-                : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
-            }`}
-          >
-            <div className="font-medium truncate">
-              {doc.title || "Untitled"}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">
-              {new Date(doc.updatedAt).toLocaleDateString()}
-            </div>
-          </button>
+          <div key={doc.id} className="group relative flex items-center">
+            {" "}
+            {/* Wrap button in div */}
+            <button
+              onClick={() => onSelect(doc.id)}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors pr-8 ${
+                // Added padding-right
+                selectedId === doc.id
+                  ? "bg-blue-900/30 text-blue-200 border border-blue-800/50"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+              }`}
+            >
+              <div className="font-medium truncate">
+                {doc.title || "Untitled"}
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                {new Date(doc.updatedAt).toLocaleDateString()}
+              </div>
+            </button>
+            {/* Delete Action (Visible on Group Hover) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Don't select the note when deleting
+                if (confirm("Burn this signal?")) onDelete(doc.id);
+              }}
+              className="absolute right-2 p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Delete"
+            >
+              ×
+            </button>
+          </div>
         ))}
       </div>
 
