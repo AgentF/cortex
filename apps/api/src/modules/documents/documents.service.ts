@@ -1,56 +1,63 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from './entities/document.entity';
-import { CreateDocumentDto, UpdateDocumentDto } from '@cortex/shared';
+import { CreateDocumentDto } from '@cortex/shared';
+import { UpdateDocumentDto } from '@cortex/shared';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     @InjectRepository(Document)
-    private readonly documentsRepository: Repository<Document>,
+    private readonly documentRepository: Repository<Document>,
+    private readonly aiService: AiService, // 1. INJECTION
   ) {}
 
   async create(createDocumentDto: CreateDocumentDto): Promise<Document> {
-    // 1. Create the entity instance
-    const doc = this.documentsRepository.create(createDocumentDto);
-    // 2. Save to DB (triggers INSERT)
-    return await this.documentsRepository.save(doc);
+    // 2. EMBED ON CREATION
+    // We await the vector before saving. (Synchronous Approach)
+    const embedding = await this.aiService.embed(createDocumentDto.content);
+
+    const document = this.documentRepository.create({
+      ...createDocumentDto,
+      embedding, // Merge vector into entity
+    });
+
+    return this.documentRepository.save(document);
   }
 
   async findAll(): Promise<Document[]> {
-    // Returns all docs, sorted by newest update first
-    return await this.documentsRepository.find({
+    return this.documentRepository.find({
       order: { updatedAt: 'DESC' },
+      // Optimization: Don't pull the heavy vector column for the list view
+      select: ['id', 'title', 'content', 'createdAt', 'updatedAt'],
     });
   }
 
   async findOne(id: string): Promise<Document> {
-    const doc = await this.documentsRepository.findOneBy({ id });
-    if (!doc) {
-      throw new NotFoundException(`Document #${id} not found`);
-    }
-    return doc;
+    return this.documentRepository.findOneBy({ id });
   }
 
   async update(
     id: string,
     updateDocumentDto: UpdateDocumentDto,
-  ): Promise<Document> {
-    // Check existence first
-    await this.findOne(id);
+  ): Promise<void> {
+    // 3. CONDITIONAL RE-EMBEDDING
+    // Only engage the Neural Engine if the content (knowledge) actually changed.
+    // If the user just renamed the file, we skip the heavy math.
+    const partialUpdate: any = { ...updateDocumentDto };
 
-    // Perform update (triggers UPDATE)
-    await this.documentsRepository.update(id, updateDocumentDto);
+    if (updateDocumentDto.content) {
+      partialUpdate.embedding = await this.aiService.embed(
+        updateDocumentDto.content,
+      );
+    }
 
-    // Return the fresh entity
-    return this.findOne(id);
+    await this.documentRepository.update(id, partialUpdate);
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.documentsRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Document #${id} not found`);
-    }
+    await this.documentRepository.delete(id);
   }
 }

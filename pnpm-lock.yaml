@@ -25,6 +25,9 @@ importers:
       '@nestjs/typeorm':
         specifier: ^11.0.0
         version: 11.0.0(@nestjs/common@11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.11)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.28(pg@8.16.3)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)))
+      ollama:
+        specifier: ^0.6.3
+        version: 0.6.3
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -3115,6 +3118,9 @@ packages:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
 
+  ollama@0.6.3:
+    resolution: {integrity: sha512-KEWEhIqE5wtfzEIZbDCLH51VFZ6Z3ZSa6sIOg/E/tBV8S51flyqBOXi+bRxlOYKDf8i327zG9eSTb8IJxvm3Zg==}
+
   on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
     engines: {node: '>= 0.8'}
@@ -4109,6 +4115,9 @@ packages:
     peerDependenciesMeta:
       webpack-cli:
         optional: true
+
+  whatwg-fetch@3.6.20:
+    resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
 
   which-typed-array@1.1.19:
     resolution: {integrity: sha512-rEvr90Bck4WZt9HHFC4DJMsjvu7x+r6bImz0/BrbWb7A2djJ8hnZMrWnHo9F8ssv0OMErasDhftrfROTyqSDrw==}
@@ -7411,6 +7420,10 @@ snapshots:
 
   object-inspect@1.13.4: {}
 
+  ollama@0.6.3:
+    dependencies:
+      whatwg-fetch: 3.6.20
+
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
@@ -8481,6 +8494,8 @@ snapshots:
       - '@swc/core'
       - esbuild
       - uglify-js
+
+  whatwg-fetch@3.6.20: {}
 
   which-typed-array@1.1.19:
     dependencies:
