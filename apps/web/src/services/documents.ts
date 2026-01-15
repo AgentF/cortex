@@ -1,8 +1,9 @@
 import { api } from "../lib/axios";
-import {
+import type {
+  DocumentDto,
+  SearchResultDto,
   CreateDocumentDto,
   UpdateDocumentDto,
-  DocumentDto,
 } from "@cortex/shared";
 
 export const documentsApi = {
@@ -33,5 +34,13 @@ export const documentsApi = {
   // DELETE /documents/:id
   delete: async (id: string) => {
     await api.delete(`/documents/${id}`);
+  },
+
+  // GET /documents/search?q=query
+  search: async (query: string): Promise<SearchResultDto[]> => {
+    const response = await api.get<SearchResultDto[]>("/documents/search", {
+      params: { q: query },
+    });
+    return response.data;
   },
 };
