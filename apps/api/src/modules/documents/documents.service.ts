@@ -5,6 +5,7 @@ import { Document } from './entities/document.entity';
 import { CreateDocumentDto } from '@cortex/shared';
 import { UpdateDocumentDto } from '@cortex/shared';
 import { AiService } from '../ai/ai.service';
+import { SearchResultDto } from '@cortex/shared';
 
 @Injectable()
 export class DocumentsService {
@@ -59,5 +60,39 @@ export class DocumentsService {
 
   async remove(id: string): Promise<void> {
     await this.documentRepository.delete(id);
+  }
+  async search(query: string, limit = 5): Promise<SearchResultDto[]> {
+    // 1. Transmute Text to Vector
+    const queryVector = await this.aiService.embed(query);
+
+    // Guard: If AI fails, return empty list (don't crash)
+    if (queryVector.length === 0) return [];
+
+    // 2. The Vector Query
+    // We use createQueryBuilder to access raw Postgres functions
+    const results = await this.documentRepository
+      .createQueryBuilder('document')
+      // Select only what we need (Payload Optimization)
+      .select(['document.id', 'document.title'])
+      // Calculate Similarity: 1 - Distance
+      // The <=> operator is "Cosine Distance" (0 = Same, 2 = Opposite)
+      // We want Similarity (1 = Same, -1 = Opposite)
+      .addSelect('1 - (document.embedding <=> :vector)', 'similarity')
+      // Filter: Only documents that have embeddings
+      .where('document.embedding IS NOT NULL')
+      // Sort: Nearest neighbors first
+      .orderBy('document.embedding <=> :vector', 'ASC')
+      .limit(limit)
+      // Parameter: Format array as string '[0.1, 0.2, ...]' for Postgres
+      .setParameter('vector', `[${queryVector.join(',')}]`)
+      .getRawMany();
+
+    // 3. Map Raw SQL Result to DTO
+    // getRawMany returns flat structure like { document_id: '...', similarity: ... }
+    return results.map((r) => ({
+      id: r.document_id,
+      title: r.document_title,
+      similarity: parseFloat(r.similarity), // Ensure number type
+    }));
   }
 }

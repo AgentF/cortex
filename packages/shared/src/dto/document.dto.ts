@@ -19,3 +19,10 @@ export class DocumentDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// 4. The search result (what the API sends back for searches)
+export interface SearchResultDto {
+  id: string;
+  title: string;
+  similarity: number; // 0 to 1 (1 = exact match)
+}
