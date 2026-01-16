@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
     }),
     // 2. Load Feature Modules
     DocumentsModule,
+    ChatModule,
   ],
   controllers: [],
   providers: [],
