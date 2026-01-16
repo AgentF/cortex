@@ -63,4 +63,13 @@ export const chatApi = {
       onToken(chunk);
     }
   },
+  // 6. Edit Message
+  updateMessage: async (id: string, content: string): Promise<void> => {
+    await axios.patch(`/chat/messages/${id}`, { content });
+  },
+
+  // 7. Delete Message
+  deleteMessage: async (id: string): Promise<void> => {
+    await axios.delete(`/chat/messages/${id}`);
+  },
 };

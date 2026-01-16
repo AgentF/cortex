@@ -1,16 +1,15 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Markdown } from "tiptap-markdown"; // The secret sauce
-// import { cn } from "../../lib/utils"; // We need to create this utility or inline it
+import { Markdown } from "tiptap-markdown";
 import { useEffect } from "react";
 
-// Temporary utility if you don't have lib/utils yet
+// Inline utility for class merging
 function classNames(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
 interface EditorProps {
-  value: string; // The Markdown content
+  value: string;
   onChange: (markdown: string) => void;
   className?: string;
 }
@@ -20,25 +19,26 @@ export const Editor = ({ value, onChange, className }: EditorProps) => {
     extensions: [
       StarterKit,
       Markdown.configure({
-        html: false, // Force pure Markdown
+        html: false,
         transformPastedText: true,
       }),
     ],
-    content: value,
     editorProps: {
       attributes: {
-        // The 'prose' class gives it the document look
-        class: "prose prose-invert max-w-none focus:outline-none min-h-[300px]",
+        // Updated classes:
+        // 1. min-h-full to ensure it fills the panel
+        // 2. max-w-none to use full width
+        // 3. prose-invert for dark mode typography
+        class: "prose prose-invert max-w-none focus:outline-none min-h-full",
       },
     },
     onUpdate: ({ editor }) => {
-      // EXTRACT MARKDOWN INSTEAD OF JSON/HTML
       const markdownOutput = editor.storage.markdown.getMarkdown();
       onChange(markdownOutput);
     },
   });
 
-  // Handle external updates (e.g. loading a new note)
+  // Handle external updates (switching documents)
   useEffect(() => {
     if (editor && value !== editor.storage.markdown.getMarkdown()) {
       editor.commands.setContent(value);
@@ -48,18 +48,18 @@ export const Editor = ({ value, onChange, className }: EditorProps) => {
   if (!editor) return null;
 
   return (
-    <div
-      className={classNames(
-        "flex flex-col border border-gray-700 rounded-md overflow-hidden",
-        className
-      )}
-    >
-      {/* TOOLBAR */}
-      <div className="flex items-center gap-2 p-2 bg-gray-800 border-b border-gray-700">
+    <div className={classNames("flex flex-col h-full", className)}>
+      {/* TOOLBAR - Sticky at the top, transparent/blur effect */}
+      <div className="flex items-center gap-2 py-2 mb-4 border-b border-gray-800/50 sticky top-0 z-10 bg-gray-950/80 backdrop-blur">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive("bold")}
           label="B"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          isActive={editor.isActive("italic")}
+          label="i"
         />
         <ToolbarButton
           onClick={() =>
@@ -76,21 +76,26 @@ export const Editor = ({ value, onChange, className }: EditorProps) => {
           label="H2"
         />
         <ToolbarButton
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          isActive={editor.isActive("bulletList")}
+          label="• List"
+        />
+        <ToolbarButton
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           isActive={editor.isActive("codeBlock")}
           label="{ }"
         />
       </div>
 
-      {/* EDITOR AREA */}
-      <div className="p-4 bg-gray-900">
+      {/* EDITOR CONTENT AREA */}
+      <div className="flex-1">
         <EditorContent editor={editor} />
       </div>
     </div>
   );
 };
 
-// Simple Button Helper
+// Simplified Button Helper
 const ToolbarButton = ({
   onClick,
   isActive,
@@ -102,11 +107,14 @@ const ToolbarButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-3 py-1 rounded text-sm font-bold transition-colors ${
-      isActive
-        ? "bg-blue-600 text-white"
-        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-    }`}
+    className={`
+      px-2.5 py-1 rounded text-xs font-bold transition-all duration-200
+      ${
+        isActive
+          ? "bg-blue-600/90 text-white shadow-sm shadow-blue-900/20"
+          : "text-gray-500 hover:text-gray-200 hover:bg-gray-800"
+      }
+    `}
   >
     {label}
   </button>

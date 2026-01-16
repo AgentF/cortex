@@ -28,7 +28,9 @@ type Action =
   | { type: "START_STREAM" }
   | { type: "APPEND_TOKEN"; payload: string }
   | { type: "END_STREAM"; payload: ChatMessageDto } // Replace partial stream with final DB message
-  | { type: "DELETE_SESSION"; payload: string };
+  | { type: "DELETE_SESSION"; payload: string }
+  | { type: "UPDATE_MESSAGE"; payload: { id: string; content: string } }
+  | { type: "DELETE_MESSAGE"; payload: string };
 
 // --- REDUCER ---
 const chatReducer = (state: ChatState, action: Action): ChatState => {
@@ -94,6 +96,22 @@ const chatReducer = (state: ChatState, action: Action): ChatState => {
           state.activeSessionId === action.payload ? [] : state.messages,
       };
 
+    case "UPDATE_MESSAGE":
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.id === action.payload.id
+            ? { ...m, content: action.payload.content }
+            : m
+        ),
+      };
+
+    case "DELETE_MESSAGE":
+      return {
+        ...state,
+        messages: state.messages.filter((m) => m.id !== action.payload),
+      };
+
     default:
       return state;
   }
@@ -107,6 +125,8 @@ const ChatContext = createContext<{
   createSession: () => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
+  editMessage: (id: string, newContent: string) => Promise<void>;
+  deleteMessage: (id: string) => Promise<void>;
 } | null>(null);
 
 // --- PROVIDER ---
@@ -197,6 +217,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [state.activeSessionId]
   );
 
+  const editMessage = useCallback(async (id: string, newContent: string) => {
+    // Optimistic Update
+    dispatch({ type: "UPDATE_MESSAGE", payload: { id, content: newContent } });
+    try {
+      await chatApi.updateMessage(id, newContent);
+    } catch (e) {
+      console.error("Edit failed", e);
+      // Ideally revert state here, but for MVP we log error
+    }
+  }, []);
+
+  const removeMessage = useCallback(async (id: string) => {
+    // Optimistic Update
+    dispatch({ type: "DELETE_MESSAGE", payload: id });
+    try {
+      await chatApi.deleteMessage(id);
+    } catch (e) {
+      console.error("Delete failed", e);
+    }
+  }, []);
+
   // Initial Load
   useEffect(() => {
     loadSessions();
@@ -211,6 +252,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         sendMessage,
         createSession,
         deleteSession,
+        editMessage,
+        removeMessage,
       }}
     >
       {children}
