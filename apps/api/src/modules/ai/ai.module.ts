@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { AiService } from './ai.service';
 
+@Global() // Make it available everywhere without re-importing
 @Module({
   providers: [AiService],
-  exports: [AiService], // CRITICAL: Makes this available to DocumentsModule
+  exports: [AiService],
 })
 export class AiModule {}

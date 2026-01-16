@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service'; // Keep AppService if AppController uses it for other things
+import { AiModule } from './modules/ai/ai.module'; // Ensure AiModule is imported
 
 @Module({
   imports: [
@@ -18,10 +21,11 @@ import { ChatModule } from './modules/chat/chat.module';
       logging: true,
     }),
     // 2. Load Feature Modules
-    DocumentsModule,
     ChatModule,
+    DocumentsModule,
+    AiModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

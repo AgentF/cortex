@@ -1,4 +1,4 @@
-# DevLog 009: The Memory Bank (RAG Phase 4.1)
+# DevLog 009: The Memory Bank
 
 ## Context
 
