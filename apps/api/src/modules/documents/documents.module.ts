@@ -9,6 +9,6 @@ import { AiModule } from '../ai/ai.module';
   imports: [TypeOrmModule.forFeature([Document]), AiModule], // Registers Repository<Document>
   controllers: [DocumentsController],
   providers: [DocumentsService],
-  exports: [TypeOrmModule], // Export if other modules need access to the repository
+  exports: [TypeOrmModule, DocumentsService], // Export if other modules need access to the repository
 })
 export class DocumentsModule {}

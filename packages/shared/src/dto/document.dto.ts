@@ -24,5 +24,6 @@ export class DocumentDto {
 export interface SearchResultDto {
   id: string;
   title: string;
-  similarity: number; // 0 to 1 (1 = exact match)
+  similarity: number;
+  content?: string;
 }

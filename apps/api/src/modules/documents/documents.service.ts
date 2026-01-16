@@ -68,16 +68,12 @@ export class DocumentsService {
 
     const results = await this.documentRepository
       .createQueryBuilder('document')
-      .select(['document.id', 'document.title'])
-      // FIX 1: Rename param to :queryVec
+      .select(['document.id', 'document.title', 'document.content'])
       .addSelect('1 - (document.embedding <=> :queryVec::vector)', 'similarity')
       .where('document.embedding IS NOT NULL')
-      // FIX 2: Rename param here too
       .andWhere('(1 - (document.embedding <=> :queryVec::vector)) > :threshold')
-      // FIX 3: And here
       .orderBy('document.embedding <=> :queryVec::vector', 'ASC')
       .limit(limit)
-      // FIX 4: Bind to the new name 'queryVec'
       .setParameter('queryVec', `[${queryVector.join(',')}]`)
       .setParameter('threshold', 0.4)
       .getRawMany();
@@ -85,6 +81,7 @@ export class DocumentsService {
     return results.map((r) => ({
       id: r.document_id,
       title: r.document_title,
+      content: r.document_content,
       similarity: parseFloat(r.similarity),
     }));
   }
