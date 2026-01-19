@@ -12,7 +12,7 @@ import {
 import { Response } from 'express';
 import { ChatService } from './chat.service';
 import { CreateChatSessionDto, CreateChatMessageDto } from '@cortex/shared';
-import { ChatRole } from './entities/chat-message.entity';
+import { ChatRole } from '@cortex/shared';
 
 @Controller('chat')
 export class ChatController {

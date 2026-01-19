@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ChatRole } from '@cortex/shared';
 import { ChatSession } from './entities/chat-session.entity';
-import { ChatMessage, ChatRole } from './entities/chat-message.entity';
+import { ChatMessage } from './entities/chat-message.entity';
 import { AiService } from '../ai/ai.service';
 import { DocumentsService } from '../documents/documents.service';
 

@@ -69,17 +69,19 @@ export class DocumentsService {
     const results = await this.documentRepository
       .createQueryBuilder('document')
       .select(['document.id', 'document.title', 'document.content'])
+      // Calculate cosine similarity manually: 1 - cosine_distance
       .addSelect('1 - (document.embedding <=> :queryVec::vector)', 'similarity')
       .where('document.embedding IS NOT NULL')
       .andWhere('(1 - (document.embedding <=> :queryVec::vector)) > :threshold')
-      .orderBy('document.embedding <=> :queryVec::vector', 'ASC')
+      .orderBy('similarity', 'DESC') // Sort by calculated alias
       .limit(limit)
       .setParameter('queryVec', `[${queryVector.join(',')}]`)
       .setParameter('threshold', 0.4)
       .getRawMany();
 
+    // MAP TO DTO STRICTLY
     return results.map((r) => ({
-      id: r.document_id,
+      documentId: r.document_id, // TypeORM raw results usually use snake_case alias
       title: r.document_title,
       content: r.document_content,
       similarity: parseFloat(r.similarity),

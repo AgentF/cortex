@@ -1,12 +1,5 @@
 import { api as axios } from "../lib/axios";
-import { ChatSessionDto, ChatMessageDto } from "@cortex/shared"; // Or define interfaces locally if shared lib isn't linked to web yet
-
-// Define interfaces locally if needed to avoid build issues for now
-export interface ChatSessionPreview {
-  id: string;
-  title: string;
-  updatedAt: string;
-}
+import { ChatSessionDto } from "@cortex/shared";
 
 export const chatApi = {
   // 1. Create a new thread
@@ -18,7 +11,7 @@ export const chatApi = {
   },
 
   // 2. Get list of threads
-  listSessions: async (): Promise<ChatSessionPreview[]> => {
+  listSessions: async (): Promise<ChatSessionDto[]> => {
     const { data } = await axios.get("/chat/sessions");
     return data;
   },

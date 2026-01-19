@@ -7,12 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ChatSession } from './chat-session.entity';
-
-// BYPASS: Define Enum locally to stop the crash
-export enum ChatRole {
-  USER = 'user',
-  ASSISTANT = 'assistant',
-}
+import { ChatRole } from '@cortex/shared';
 
 @Entity('chat_messages')
 export class ChatMessage {
