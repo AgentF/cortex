@@ -9,7 +9,7 @@ import { Ollama } from 'ollama';
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly ollama: Ollama;
-  private readonly EMBEDDING_MODEL = 'nomic-embed-text';
+  private readonly EMBEDDING_MODEL = 'nomic-embed-text-v2-moe';
   private readonly CHAT_MODEL = 'gemma3:4b';
 
   constructor() {
@@ -33,7 +33,7 @@ export class AiService {
   /**
    * Vector Generation
    * Used by DocumentsService to index content.
-   * Converts text into a 768-dimensional vector using nomic-embed-text
+   * Converts text into a 768-dimensional vector using nomic-embed-text-v2-moe
    */
   async embed(content: string): Promise<number[]> {
     // 1. Efficiency Guard: Don't process empty air.

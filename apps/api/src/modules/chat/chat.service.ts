@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ChatRole } from '@cortex/shared';
+import { ChatRole, CreateChatSessionDto } from '@cortex/shared';
 import { ChatSession } from './entities/chat-session.entity';
 import { ChatMessage } from './entities/chat-message.entity';
 import { AiService } from '../ai/ai.service';
@@ -18,14 +18,29 @@ export class ChatService {
     private documentsService: DocumentsService,
   ) {}
 
-  /**
-   * Initializes a new conversation thread.
-   */
-  async createSession(title?: string): Promise<ChatSession> {
+  async create(
+    createChatSessionDto: CreateChatSessionDto,
+  ): Promise<ChatSession> {
+    // 1. Create Session
+    // USE 'sessionRepo' (Local Variable)
     const session = this.sessionRepo.create({
-      title: title || `Session ${new Date().toISOString()}`,
+      title:
+        createChatSessionDto.title || `Session ${new Date().toISOString()}`,
     });
-    return this.sessionRepo.save(session);
+    const savedSession = await this.sessionRepo.save(session);
+
+    // 2. Atomic Message Creation
+    if (createChatSessionDto.firstMessage) {
+      // USE 'messageRepo' (Local Variable)
+      const message = this.messageRepo.create({
+        content: createChatSessionDto.firstMessage,
+        role: ChatRole.USER,
+        session: savedSession,
+      });
+      await this.messageRepo.save(message);
+    }
+
+    return savedSession;
   }
 
   /**

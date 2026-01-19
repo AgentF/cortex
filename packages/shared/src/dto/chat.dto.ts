@@ -16,6 +16,10 @@ export class CreateChatSessionDto {
   @IsString()
   @IsOptional()
   title?: string;
+
+  @IsString()
+  @IsOptional()
+  firstMessage?: string;
 }
 
 export class CreateChatMessageDto {

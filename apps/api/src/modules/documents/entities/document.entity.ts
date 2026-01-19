@@ -4,25 +4,28 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { DocumentChunk } from './document-chunk.entity';
 
-@Entity('documents') // Maps to SQL table 'documents'
+@Entity('documents')
 export class Document {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   title: string;
 
-  @Column({ type: 'text' }) // 'text' type has no length limit in Postgres (ideal for Markdown)
+  @Column('text')
   content: string;
 
-  @Column({ type: 'vector', nullable: true })
-  embedding: number[];
-
-  @CreateDateColumn({ type: 'timestamptz' }) // 'timestamptz' handles timezone offsets correctly
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn()
   updatedAt: Date;
+
+  // One Document has Many Chunks
+  @OneToMany(() => DocumentChunk, (chunk) => chunk.document)
+  chunks: DocumentChunk[];
 }

@@ -19,8 +19,8 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Post('sessions')
-  async createSession(@Body() dto: CreateChatSessionDto) {
-    return this.chatService.createSession();
+  create(@Body() createChatSessionDto: CreateChatSessionDto) {
+    return this.chatService.create(createChatSessionDto);
   }
 
   @Get('sessions')
