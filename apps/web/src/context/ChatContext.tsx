@@ -124,7 +124,7 @@ const ChatContext = createContext<{
   selectSession: (id: string) => Promise<void>;
   createSession: () => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, activeContext?: string) => Promise<void>;
   editMessage: (id: string, newContent: string) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
 } | null>(null);
@@ -170,7 +170,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // The Big One: Send & Stream
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, activeContext?: string) => {
       if (!state.activeSessionId) return;
 
       // 1. Optimistic UI: Add User Message immediately
@@ -178,6 +178,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         id: Date.now().toString(),
         role: ChatRole.USER,
         content,
+        activeContext,
         createdAt: new Date().toISOString(),
         sessionId: state.activeSessionId,
       } as any;
@@ -189,10 +190,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       let fullContent = "";
 
       try {
-        await chatApi.streamMessage(state.activeSessionId, content, (token) => {
-          fullContent += token;
-          dispatch({ type: "APPEND_TOKEN", payload: token });
-        });
+        await chatApi.streamMessage(
+          state.activeSessionId,
+          activeContext,
+          content,
+          (token) => {
+            fullContent += token;
+            dispatch({ type: "APPEND_TOKEN", payload: token });
+          }
+        );
 
         // 3. Finalize
         // Ideally, we fetch the real message ID from DB here, but for now we just unlock UI

@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ChatService } from './chat.service';
-import { CreateChatSessionDto, CreateChatMessageDto } from '@cortex/shared';
+import {
+  CreateChatSessionDto,
+  CreateChatMessageDto,
+  SendMessageDto,
+} from '@cortex/shared';
 import { ChatRole } from '@cortex/shared';
 
 @Controller('chat')
@@ -70,7 +74,7 @@ export class ChatController {
   @Post('sessions/:id/stream')
   async streamMessage(
     @Param('id', ParseUUIDPipe) sessionId: string,
-    @Body() body: { prompt: string }, // Simple body for now
+    @Body() dto: SendMessageDto, // <--- USE THE NEW DTO
     @Res() res: Response,
   ) {
     // 1. Setup Headers for Streaming
@@ -80,7 +84,11 @@ export class ChatController {
 
     try {
       // 2. Ignite the Logic Engine
-      const stream = this.chatService.chatStream(sessionId, body.prompt);
+      const stream = this.chatService.chatStream(
+        sessionId,
+        dto.content,
+        dto.activeContext,
+      );
 
       // 3. Pipe the Tokens
       for await (const token of stream) {

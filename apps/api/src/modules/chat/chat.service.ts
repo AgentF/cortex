@@ -114,28 +114,28 @@ export class ChatService {
   async deleteSession(id: string): Promise<void> {
     await this.sessionRepo.delete(id);
   }
-
   /**
    * THE ORCHESTRATOR
    * 1. Save User Message
-   * 2. Search Context
-   * 3. Build Prompt
+   * 2. Search Context (RAG)
+   * 3. Build Prompt (System + Visual + RAG)
    * 4. Stream Response
-   * 5. Save AI Message (on completion)
+   * 5. Save AI Message
    */
-  async *chatStream(sessionId: string, userQuery: string) {
+  async *chatStream(
+    sessionId: string,
+    userQuery: string,
+    activeContext?: string, // <--- The Editor Content
+  ) {
     // 1. Persistence (User)
     await this.addMessage(sessionId, ChatRole.USER, userQuery);
 
-    // 2. Retrieval (RAG)
-    // We search for top 3 relevant chunks
+    // 2. Retrieval (RAG - Long Term Memory)
     const searchResults = await this.documentsService.search(userQuery, 3);
-    const contextBlock = searchResults
-      .map(
-        (doc) => `[Source: ${doc.title}]\n${doc.content || '...'}`, // Assuming search returns content? Phase 3 check needed.
-        // If search only returns IDs/Titles, we might need to fetch content.
-        // For now, let's assume specific Logic A: Search returns enough info.
-      )
+
+    // DEFINITION: We define 'ragContext' here so it exists for the prompt later
+    const ragContext = searchResults
+      .map((doc) => `[Reference: ${doc.title}]\n${doc.content}`)
       .join('\n---\n');
 
     // 3. History Retrieval
@@ -146,37 +146,43 @@ export class ChatService {
     }));
 
     // 4. Prompt Engineering
-    // We construct the "Active Context"
+    let systemInstructions = `You are CORTEX, a Second Brain software architect.
+    Your goal is to answer the user's request efficiently.
+    
+    RULES:
+    1. If the answer is found in the "VISUAL CONTEXT" (The user's open file), prioritize that information.
+    2. If not, check "KNOWLEDGE BASE" (RAG).
+    3. Be concise. Show code if requested.
+    `;
+
+    // INJECTION: Visual Context (Short Term Memory)
+    if (activeContext && activeContext.trim().length > 0) {
+      systemInstructions += `\n\n=== VISUAL CONTEXT (USER IS LOOKING AT THIS NOW) ===\n${activeContext}\n==================================================\n`;
+    }
+
+    // INJECTION: RAG Context (Long Term Memory)
+    if (ragContext.length > 0) {
+      systemInstructions += `\n\n=== KNOWLEDGE BASE (RELEVANT NOTES) ===\n${ragContext}\n=======================================\n`;
+    }
+
     const systemPrompt = {
       role: 'system',
-      content: `You are CORTEX, a Second Brain. 
-      Use the following context to answer the user's question. 
-      If the answer is not in the context, say so, but try to help based on general knowledge.
-      
-      CONTEXT:
-      ${contextBlock}
-      `,
+      content: systemInstructions,
     };
 
-    // We replace the last user message with the "Augmented" version?
-    // Or we prepend the system prompt.
-    // Strategy: System Prompt + History (minus last) + Augmented Last Message?
-    // Simpler Strategy: System Prompt + Full History.
-    // The history already contains the User Query we just saved.
-
+    // Construct the final message array
     const fullPrompt = [systemPrompt, ...history];
 
-    // 5. Streaming & Accumulation
+    // 5. Streaming
     let fullAiResponse = '';
     const stream = this.aiService.streamChat(fullPrompt);
 
     for await (const token of stream) {
       fullAiResponse += token;
-      yield token; // Pass to Controller
+      yield token;
     }
 
     // 6. Persistence (AI)
-    // Once the stream is done, we save the full thought.
     await this.addMessage(sessionId, ChatRole.ASSISTANT, fullAiResponse);
   }
 }

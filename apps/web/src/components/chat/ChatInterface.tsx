@@ -120,9 +120,15 @@ const MessageBubble = ({
   );
 };
 
-export const ChatInterface = () => {
+interface ChatInterfaceProps {
+  getEditorContext: () => string;
+}
+
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  getEditorContext,
+}) => {
   const { state, sendMessage, createSession, editMessage, removeMessage } =
-    useChat(); // <--- Get new methods
+    useChat();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -132,9 +138,14 @@ export const ChatInterface = () => {
 
   const handleSend = async () => {
     if (!input.trim() || state.isStreaming) return;
+    const activeContext = getEditorContext();
     const content = input;
     setInput("");
-    await sendMessage(content);
+    if (activeContext) {
+      await sendMessage(content, activeContext);
+    } else {
+      await sendMessage(content);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

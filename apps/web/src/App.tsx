@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ChatProvider } from "./context/ChatContext";
 import { useDocuments } from "./hooks/useDocuments";
 import { Sidebar } from "./components/layout/Sidebar";
@@ -21,6 +21,9 @@ function App() {
   // 2. UI State
   const [isChatOpen, setIsChatOpen] = useState(true);
 
+  // 3. Refs
+  const editorContentRef = useRef<string>("");
+
   return (
     <ChatProvider>
       <div className="flex h-screen bg-black text-white overflow-hidden font-sans">
@@ -40,14 +43,17 @@ function App() {
             selectedId={selectedId}
             content={content}
             status={status}
-            onChange={setContent}
+            onChange={(val) => {
+              editorContentRef.current = val;
+              setContent(val);
+            }}
           />
 
           {/* TOGGLE BUTTON (Absolute positioned on top right of editor) */}
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
             className={`
-              absolute top-3 right-4 z-20 p-1.5 rounded-md shadow-lg border border-gray-700 transition-all
+              absolute top-3 right-8 z-20 p-1.5 rounded-md shadow-lg border border-gray-700 transition-all
               ${
                 isChatOpen
                   ? "bg-blue-600 border-blue-500 text-white"
@@ -86,7 +92,7 @@ function App() {
         >
           {/* Container keeps width fixed to prevent content squashing during transition */}
           <div className="h-full w-[400px]">
-            <ChatInterface />
+            <ChatInterface getEditorContext={() => editorContentRef.current} />
           </div>
         </aside>
       </div>

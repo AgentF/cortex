@@ -31,7 +31,8 @@ export const chatApi = {
   // We use native fetch because Axios handling of streams can be verbose
   streamMessage: async (
     sessionId: string,
-    prompt: string,
+    content: string,
+    activeContext: string | undefined,
     onToken: (token: string) => void
   ): Promise<void> => {
     const response = await fetch(
@@ -39,7 +40,7 @@ export const chatApi = {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ content, activeContext }),
       }
     );
 

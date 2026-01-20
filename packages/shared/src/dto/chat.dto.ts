@@ -12,6 +12,8 @@ export enum ChatRole {
   SYSTEM = "system",
 }
 
+// --- PERSISTENCE DTOs (Database) ---
+
 export class CreateChatSessionDto {
   @IsString()
   @IsOptional()
@@ -56,4 +58,20 @@ export class ChatSessionDto {
 
   createdAt: Date;
   updatedAt: Date;
+}
+
+// --- SIGNAL DTOs (Runtime/API) ---
+
+/**
+ * The payload for the Stream/Generation endpoint.
+ * This carries the context which is ephemeral (temporary).
+ */
+export class SendMessageDto {
+  @IsString()
+  @IsNotEmpty()
+  content: string; // The user's prompt
+
+  @IsOptional()
+  @IsString()
+  activeContext?: string; // The injected memory (Editor content)
 }
