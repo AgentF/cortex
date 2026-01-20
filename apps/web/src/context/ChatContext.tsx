@@ -178,7 +178,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         id: Date.now().toString(),
         role: ChatRole.USER,
         content,
-        activeContext,
         createdAt: new Date().toISOString(),
         sessionId: state.activeSessionId,
       } as any;
@@ -192,8 +191,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         await chatApi.streamMessage(
           state.activeSessionId,
-          activeContext,
           content,
+          activeContext,
           (token) => {
             fullContent += token;
             dispatch({ type: "APPEND_TOKEN", payload: token });

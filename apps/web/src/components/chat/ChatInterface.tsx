@@ -122,30 +122,43 @@ const MessageBubble = ({
 
 interface ChatInterfaceProps {
   getEditorContext: () => string;
+  activeTitle?: string; // <--- NEW PROP
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   getEditorContext,
+  activeTitle,
 }) => {
   const { state, sendMessage, createSession, editMessage, removeMessage } =
     useChat();
   const [input, setInput] = useState("");
+
+  // TOGGLE STATE: Default to true if a document is open
+  const [isContextEnabled, setIsContextEnabled] = useState(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [state.messages, state.isStreaming]);
 
+  // RESET toggle when title changes (optional, but good UX to re-enable on new doc)
+  useEffect(() => {
+    if (activeTitle) setIsContextEnabled(true);
+  }, [activeTitle]);
+
   const handleSend = async () => {
     if (!input.trim() || state.isStreaming) return;
-    const activeContext = getEditorContext();
+
+    // LOGIC: Only pull context if enabled AND title exists
+    const activeContext =
+      isContextEnabled && activeTitle ? getEditorContext() : undefined;
+
     const content = input;
     setInput("");
-    if (activeContext) {
-      await sendMessage(content, activeContext);
-    } else {
-      await sendMessage(content);
-    }
+
+    // Send
+    await sendMessage(content, activeContext);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -155,10 +168,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // Empty State
+  // ... Empty State logic (remains same) ...
   if (!state.activeSessionId) {
-    // ... (Keep existing empty state logic)
+    // ... (Keep existing empty state)
     return (
+      // ...
       <div className="flex flex-col h-full items-center justify-center bg-gray-900 border-l border-gray-800 text-center p-8">
         <button
           onClick={() => createSession()}
@@ -181,6 +195,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* MESSAGES AREA */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {state.messages.map((msg) => (
+          // ... (Keep MessageBubble)
           <MessageBubble
             key={msg.id}
             msg={msg}
@@ -200,14 +215,78 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* INPUT AREA */}
       <div className="p-4 border-t border-gray-800 bg-gray-900">
+        {/* --- CONTEXT CONTROL BAR --- */}
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsContextEnabled(!isContextEnabled)}
+              disabled={!activeTitle}
+              className={`
+                flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors
+                ${
+                  !activeTitle
+                    ? "opacity-50 cursor-not-allowed text-gray-600"
+                    : isContextEnabled
+                    ? "bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50"
+                    : "bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700"
+                }
+              `}
+              title={
+                activeTitle ? "Toggle Active Context" : "No Active Document"
+              }
+            >
+              {/* EYE ICON */}
+              {isContextEnabled ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-3 w-3"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path
+                    fillRule="evenodd"
+                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-3 w-3"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
+                    clipRule="evenodd"
+                  />
+                  <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.742L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                </svg>
+              )}
+
+              {activeTitle
+                ? isContextEnabled
+                  ? `Watching: ${activeTitle}`
+                  : "Context Offline"
+                : "No Active Note"}
+            </button>
+          </div>
+        </div>
+
         <div className="relative">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Query the database..."
+            placeholder={
+              activeTitle && isContextEnabled
+                ? `Ask about "${activeTitle}"...`
+                : "Query the database..."
+            }
             disabled={state.isStreaming}
-            className="w-full bg-gray-800 text-white rounded-md pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none h-24 scrollbar-thin"
+            className="w-full bg-gray-800 text-white rounded-md pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none h-24 scrollbar-thin transition-colors"
           />
           <button
             onClick={handleSend}

@@ -20,6 +20,7 @@ function App() {
 
   // 2. UI State
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const activeDocument = docs.find((d) => d.id === selectedId);
 
   // 3. Refs
   const editorContentRef = useRef<string>("");
@@ -92,7 +93,10 @@ function App() {
         >
           {/* Container keeps width fixed to prevent content squashing during transition */}
           <div className="h-full w-[400px]">
-            <ChatInterface getEditorContext={() => editorContentRef.current} />
+            <ChatInterface
+              getEditorContext={() => editorContentRef.current}
+              activeTitle={activeDocument?.title}
+            />
           </div>
         </aside>
       </div>

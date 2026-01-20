@@ -2,39 +2,45 @@
 
 ## Context
 
-The RAG system (Phase 3) provided excellent Long-Term Memory via Vector Search. However, the system was "blind" to the user's immediate workspace. If the user asked about the file currently open in the editor, the AI failed unless the file had been saved and indexed previously. We needed a "Short-Term Memory" bridge.
+The RAG system (Phase 3) provided Long-Term Memory via Vector Search. However, the system was "blind" to the user's immediate workspace. The AI could not see unsaved changes or the specific document currently open, leading to a "context gap" where the user had to copy-paste text into the chat.
 
 ## Objectives
 
-1.  Allow the AI to read the current Editor content without requiring a database save.
-2.  Prioritize this "Visual Context" over RAG results.
-3.  Maintain a strict separation between "Persistence" (DB) and "Signal" (API Payload).
+1.  **Visual Bridge:** Allow the AI to read the current Editor content without requiring a database save.
+2.  **Cognitive Filter:** Implement a manual toggle (On/Off) to prevent token waste when context is irrelevant.
+3.  **Signal Protocol:** Create a separate channel in the API for "Transient Context" vs "Persisted Chat History."
 
-## Solution: The Transient Bridge
+## Solution
 
-We implemented a direct data pipeline from the Frontend Editor to the Backend LLM.
+We implemented a dynamic pipeline from the React Frontend to the NestJS Backend.
 
-1.  **Frontend Bridge (`App.tsx`):**
+### 1. The Frontend Bridge (`App.tsx` & `ChatInterface`)
 
-    - Utilized a `useRef` to hold the editor's text content.
-    - Passed a `getEditorContext()` function to the Chat Interface.
+- **State Extraction:** Utilized `useRef` to capture the editor's live state without triggering re-renders.
+- **User Control:** Added a visual toggle button above the chat input.
+  - _Blue (Watching):_ Sends current document content.
+  - _Gray (Offline):_ Sends only the prompt.
+- **Visual Feedback:** A pill badge indicates exactly which document is being "watched."
 
-2.  **Protocol (`SendMessageDto`):**
+### 2. The Protocol (`shared/dto`)
 
-    - Expanded the API payload to include `activeContext?: string`.
-    - This data is ephemeral; it is not saved to the `chat_messages` table.
+- Updated `SendMessageDto` to include `activeContext?: string`.
+- This payload is processed by the AI but **excluded** from the permanent database record to save storage.
 
-3.  **Prompt Engineering (`ChatService`):**
-    - The System Prompt now accepts two distinct inputs:
-      - `Visual Context`: The user's active file.
-      - `Knowledge Base`: The retrieved RAG chunks.
-    - Instructions explicitly favor Visual Context for immediate queries.
+### 3. The Backend Injection (`ChatService`)
+
+- The `streamMessage` function injects the `activeContext` into the System Prompt.
+- Prompt logic: "USER IS LOOKING AT: [Context]... Prioritize this over general knowledge."
 
 ## Challenges
 
-- **Interface Mismatch:** The Frontend sent `prompt` while the Backend expected `content`. Resolved by enforcing strict DTO alignment.
-- **Context Window:** We are sending raw text. For massive documents, this might hit the 8k context limit of `gemma3:4b`. Future optimization: "Context Pruning" or "Summarization" middleware.
+- **Interface Mismatch (400 Bad Request):**
+  - _Issue:_ The Frontend sent `{ prompt: ... }` while the Backend Validator expected `{ content: ... }`.
+  - _Resolution:_ Enforced strict DTO alignment across the stack.
+- **Parameter Swapping:**
+  - _Issue:_ `ChatContext` passed arguments in the wrong order `(activeContext, content)` vs `(content, activeContext)`, resulting in empty payloads.
+  - _Resolution:_ Fixed the function signature in the React Context.
 
 ## Outcome
 
-The AI effectively answers questions about unsaved work. The "Write, Ask, Refine" loop is now seamless.
+The system now possesses "Short-Term Memory." The user can toggle this sense on or off at will. The "Write, Ask, Refine" loop is fully operational.
