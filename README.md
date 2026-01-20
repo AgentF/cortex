@@ -73,7 +73,7 @@ pnpm nx run-many --target=serve --projects=api,web
 
 ## 3. Access Points
 
-Interface: http://localhost:4200 (or 5173)
+Interface: http://localhost:5173
 API: http://localhost:3000/api
 Swagger/OpenAPI: http://localhost:3000/api/docs (If enabled)
 
