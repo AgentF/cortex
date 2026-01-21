@@ -3,7 +3,8 @@ import { ChatProvider } from "./context/ChatContext";
 import { useDocuments } from "./hooks/useDocuments";
 import { Sidebar } from "./components/layout/Sidebar";
 import { EditorPanel } from "./components/editor/EditorPanel";
-import { ChatInterface } from "./components/chat/ChatInterface"; // The component we defined in previous turn
+import { ChatInterface } from "./components/chat/ChatInterface";
+import { Dashboard } from "./components/layout/Dashboard";
 
 function App() {
   // 1. Logic Hooks
@@ -40,21 +41,27 @@ function App() {
 
         {/* CENTER: EDITOR + CHAT TOGGLE */}
         <main className="flex-1 flex flex-col min-w-0 relative">
-          <EditorPanel
-            selectedId={selectedId}
-            content={content}
-            status={status}
-            onChange={(val) => {
-              editorContentRef.current = val;
-              setContent(val);
-            }}
-          />
+          {selectedId ? (
+            <>
+              <EditorPanel
+                selectedId={selectedId}
+                content={content}
+                status={status}
+                onChange={(val) => {
+                  editorContentRef.current = val;
+                  setContent(val);
+                }}
+              />
+            </>
+          ) : (
+            // EMPTY STATE
+            <Dashboard docCount={docs.length} onCreate={createDocument} />
+          )}
 
           {/* TOGGLE BUTTON (Absolute positioned on top right of editor) */}
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`
-              absolute top-3 right-8 z-20 p-1.5 rounded-md shadow-lg border border-gray-700 transition-all
+            className={`absolute top-1.5 right-1 z-20 p-1.5 rounded-md shadow-lg border border-gray-700 transition-all
               ${
                 isChatOpen
                   ? "bg-blue-600 border-blue-500 text-white"

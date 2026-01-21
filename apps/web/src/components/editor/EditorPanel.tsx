@@ -33,7 +33,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
           ID: {selectedId.split("-")[0]}
         </div>
         <div
-          className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider transition-colors duration-300 ${
+          className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider transition-colors duration-300 mr-5 ${
             status === "saved"
               ? "text-green-500 bg-green-900/20"
               : status === "saving"

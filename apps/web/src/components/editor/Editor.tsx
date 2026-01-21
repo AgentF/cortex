@@ -2,6 +2,11 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import { useEffect } from "react";
+import {
+  SlashCommand,
+  getSuggestionItems,
+  renderItems,
+} from "./extensions/SlashCommand";
 
 // Inline utility for class merging
 function classNames(...classes: (string | undefined | null | false)[]) {
@@ -21,6 +26,12 @@ export const Editor = ({ value, onChange, className }: EditorProps) => {
       Markdown.configure({
         html: false,
         transformPastedText: true,
+      }),
+      SlashCommand.configure({
+        suggestion: {
+          items: getSuggestionItems,
+          render: renderItems,
+        },
       }),
     ],
     editorProps: {
@@ -89,7 +100,19 @@ export const Editor = ({ value, onChange, className }: EditorProps) => {
 
       {/* EDITOR CONTENT AREA */}
       <div className="flex-1">
-        <EditorContent editor={editor} />
+        <EditorContent
+          editor={editor}
+          className="
+          prose prose-invert 
+          max-w-4xl mx-auto         /* EXPANDED WIDTH (Standard is max-w-prose) */
+          w-full 
+          focus:outline-none 
+          prose-pre:bg-gray-800     /* Better code block background */
+          prose-pre:border          /* Code block border */
+          prose-pre:border-gray-700
+          min-h-[500px]             /* Ensure click target exists */
+        "
+        />
       </div>
     </div>
   );
