@@ -1,10 +1,11 @@
-import React, { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatProvider } from "./context/ChatContext";
 import { useDocuments } from "./hooks/useDocuments";
 import { Sidebar } from "./components/layout/Sidebar";
 import { EditorPanel } from "./components/editor/EditorPanel";
 import { ChatInterface } from "./components/chat/ChatInterface";
 import { Dashboard } from "./components/layout/Dashboard";
+import { CommandPalette } from "./components/layout/CommandPalette";
 
 function App() {
   // 1. Logic Hooks
@@ -21,7 +22,26 @@ function App() {
 
   // 2. UI State
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const activeDocument = docs.find((d) => d.id === selectedId);
+
+  //3. Hooks
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd+K (Mac) or Ctrl+K (Windows)
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsPaletteOpen((prev) => !prev);
+      }
+
+      if (e.key === "Escape" && isPaletteOpen) {
+        setIsPaletteOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // 3. Refs
   const editorContentRef = useRef<string>("");
@@ -106,6 +126,10 @@ function App() {
             />
           </div>
         </aside>
+        <CommandPalette
+          isOpen={isPaletteOpen}
+          onClose={() => setIsPaletteOpen(false)}
+        />
       </div>
     </ChatProvider>
   );

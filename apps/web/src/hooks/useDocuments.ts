@@ -27,10 +27,10 @@ export const useDocuments = () => {
   };
 
   // 3. Create
-  const createDocument = async () => {
+  const createDocument = async (title: string = "New Signal") => {
     const newDoc = await documentsApi.create({
-      title: "New Signal",
-      content: "# New Signal\nStart writing...",
+      title,
+      content: `# ${title}\nStart writing...`,
     });
     await refreshList();
     await selectDocument(newDoc.id);
